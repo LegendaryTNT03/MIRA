@@ -1,0 +1,338 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>MiraMarket | Officiel - Produits & Services</title>
+    
+    <script src="https://www.paypal.com/sdk/js?client-id=sb&currency=EUR"></script>
+
+    <style>
+        /* --- VARIABLES & RESET --- */
+        :root {
+            --amazon-nav: #131921;
+            --amazon-orange: #febd69;
+            --fiverr-green: #1dbf73;
+            --text-dark: #111;
+            --bg-gray: #f3f3f3;
+        }
+
+        * { box-sizing: border-box; margin: 0; padding: 0; font-family: 'Arial', sans-serif; }
+        body { background-color: var(--bg-gray); color: var(--text-dark); overflow-x: hidden; }
+
+        /* --- NAVIGATION --- */
+        header { background-color: var(--amazon-nav); color: white; padding: 10px 20px; position: sticky; top: 0; z-index: 1000; }
+        .navbar { display: flex; align-items: center; justify-content: space-between; max-width: 1400px; margin: 0 auto; gap: 20px; }
+        .logo { font-size: 26px; font-weight: bold; cursor: pointer; }
+        .logo span { color: var(--amazon-orange); }
+
+        .search-container { flex-grow: 1; position: relative; max-width: 700px; }
+        .search-bar { display: flex; }
+        .search-bar input { width: 100%; padding: 12px; border: none; border-radius: 4px 0 0 4px; outline: none; }
+        .search-bar button { background-color: var(--amazon-orange); border: none; padding: 0 20px; border-radius: 0 4px 4px 0; cursor: pointer; font-weight: bold; }
+
+        .suggestions { 
+            position: absolute; background: white; color: black; width: 100%; 
+            border-radius: 0 0 4px 4px; box-shadow: 0 8px 16px rgba(0,0,0,0.2); 
+            display: none; z-index: 2000; top: 45px;
+        }
+        .suggestions div { padding: 12px; cursor: pointer; border-bottom: 1px solid #eee; transition: 0.2s; }
+        .suggestions div:hover { background: #f0f0f0; padding-left: 20px; }
+
+        .nav-links { display: flex; gap: 25px; align-items: center; }
+        .nav-links a { color: white; text-decoration: none; font-size: 14px; cursor: pointer; transition: 0.2s; }
+        .nav-links a:hover { color: var(--amazon-orange); }
+        .cart-icon { font-size: 20px; position: relative; }
+        .cart-count { background: var(--amazon-orange); color: var(--amazon-nav); padding: 2px 7px; border-radius: 50%; font-weight: bold; font-size: 12px; position: absolute; top: -12px; right: -15px; }
+
+        /* --- HERO & CONTENT --- */
+        .hero { background: linear-gradient(to bottom, #232f3e, #37475a); color: white; text-align: center; padding: 60px 20px; }
+        .main-container { max-width: 1300px; margin: 30px auto; padding: 0 20px; }
+        .section-title { display: flex; justify-content: space-between; align-items: center; margin: 40px 0 20px; border-left: 5px solid var(--amazon-orange); padding-left: 15px; }
+        .grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)); gap: 25px; }
+
+        /* --- CARDS --- */
+        .card { background: white; border-radius: 8px; overflow: hidden; box-shadow: 0 2px 10px rgba(0,0,0,0.1); transition: 0.3s; display: flex; flex-direction: column; }
+        .card:hover { transform: translateY(-8px); box-shadow: 0 15px 30px rgba(0,0,0,0.15); }
+        .card img { width: 100%; height: 200px; object-fit: cover; }
+        .card-content { padding: 20px; flex-grow: 1; display: flex; flex-direction: column; }
+        
+        .badge { display: inline-block; padding: 4px 10px; border-radius: 4px; font-size: 11px; font-weight: bold; margin-bottom: 12px; text-transform: uppercase; }
+        .badge-product { background: #e3e6e6; color: #333; }
+        .badge-service { background: var(--fiverr-green); color: white; }
+
+        .price { font-size: 1.5rem; font-weight: bold; color: #b12704; margin: 10px 0; }
+        .service-price { color: var(--fiverr-green); }
+
+        .btn-add { display: block; width: 100%; padding: 12px; background: #ffd814; border: 1px solid #fcd200; border-radius: 25px; cursor: pointer; font-weight: bold; font-size: 14px; margin-top: auto; }
+        .btn-service { background: #fff; border: 1px solid var(--fiverr-green); color: var(--fiverr-green); border-radius: 5px; }
+        .btn-service:hover { background: var(--fiverr-green); color: white; }
+
+        /* --- MODALES --- */
+        .modal { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.8); z-index: 3000; justify-content: center; align-items: center; }
+        .modal-content { background: white; padding: 40px; border-radius: 12px; width: 90%; max-width: 450px; position: relative; animation: fadeIn 0.3s; }
+        @keyframes fadeIn { from { opacity: 0; transform: scale(0.9); } to { opacity: 1; transform: scale(1); } }
+        form input, form textarea { width: 100%; padding: 12px; margin: 12px 0; border: 1px solid #ddd; border-radius: 6px; font-size: 16px; }
+
+        /* --- PANIER SIDEBAR --- */
+        #cart-sidebar { position: fixed; right: -400px; top: 0; width: 400px; height: 100%; background: white; box-shadow: -10px 0 30px rgba(0,0,0,0.2); transition: 0.4s cubic-bezier(0.4, 0, 0.2, 1); z-index: 4000; padding: 30px; overflow-y: auto; }
+        #cart-sidebar.active { right: 0; }
+        .close-btn { cursor: pointer; float: right; font-size: 28px; color: #888; }
+        #paypal-button-container { margin-top: 25px; }
+
+        footer { background-color: var(--amazon-nav); color: white; text-align: center; padding: 60px 20px; margin-top: 80px; }
+    </style>
+</head>
+<body>
+
+    <header>
+        <nav class="navbar">
+            <div class="logo" onclick="location.reload()">Mira<span>Market</span></div>
+            
+            <div class="search-container">
+                <div class="search-bar">
+                    <input type="text" id="mainSearch" placeholder="Rechercher 'ia', 'site', 'entreprise'..." onkeyup="handleSearch()">
+                    <button>Rechercher</button>
+                </div>
+                <div id="suggestions" class="suggestions"></div>
+            </div>
+
+            <div class="nav-links">
+                <a onclick="toggleModal('loginModal')">Bonjour, Enzo<br><b>Compte & Listes</b></a>
+                <a onclick="toggleCart()" class="cart-icon">🛒<span class="cart-count" id="cartCount">0</span></a>
+            </div>
+        </nav>
+    </header>
+
+    <section class="hero">
+        <h1 style="font-size: 2.5rem; margin-bottom: 10px;">L'excellence, à portée de clic.</h1>
+        <p style="font-size: 1.2rem; opacity: 0.9;">Produits premium et services d'experts pour Enzo.</p>
+    </section>
+
+    <div class="main-container">
+
+        <div class="section-title">
+            <h2>Services Professionnels Mira</h2>
+        </div>
+        <div class="grid">
+            <div class="card" data-title="site web personnalisée">
+                <img src="https://images.unsplash.com/photo-1460925895917-afdab827c52f?auto=format&fit=crop&w=500" alt="Web">
+                <div class="card-content">
+                    <span class="badge badge-service">Freelance Elite</span>
+                    <h3>Site web personnalisée</h3>
+                    <p style="font-size: 14px; color: #666; margin-bottom: 10px;">Création de votre vitrine digitale sur mesure.</p>
+                    <p class="price service-price">À partir de 499 €</p>
+                    <button class="btn-add btn-service" onclick="openService('Devis Site Web Personnalisé')">Demander un devis</button>
+                </div>
+            </div>
+
+            <div class="card" data-title="lancement de votre entreprise">
+                <img src="https://images.unsplash.com/photo-1515378791036-0648a3ef77b2?auto=format&fit=crop&w=500" alt="Business">
+                <div class="card-content">
+                    <span class="badge badge-service">Conseil</span>
+                    <h3>Lancement de votre entreprise</h3>
+                    <p style="font-size: 14px; color: #666; margin-bottom: 10px;">Pack complet : Juridique, Marketing et Identité.</p>
+                    <p class="price service-price">À partir de 850 €</p>
+                    <button class="btn-add btn-service" onclick="openService('Lancement Entreprise Mira')">Lancer mon projet</button>
+                </div>
+            </div>
+
+            <div class="card" data-title="votre agent ia">
+                <img src="https://images.unsplash.com/photo-1677442136019-21780ecad995?auto=format&fit=crop&w=500" alt="IA">
+                <div class="card-content">
+                    <span class="badge badge-service">Futurisme IA</span>
+                    <h3>Votre agent IA</h3>
+                    <p style="font-size: 14px; color: #666; margin-bottom: 10px;">Automatisation intelligente de vos tâches.</p>
+                    <p class="price service-price">299,00 €</p>
+                    <button class="btn-add btn-service" onclick="addToCart('Configuration Agent IA', 299.00)">Acheter maintenant</button>
+                </div>
+            </div>
+        </div>
+
+        <div class="section-title">
+            <h2>Produits à la une</h2>
+        </div>
+        <div class="grid">
+            <div class="card" data-title="montre connectée pro">
+                <img src="https://images.unsplash.com/photo-1546868871-7041f2a55e12?auto=format&fit=crop&w=500" alt="Watch">
+                <div class="card-content">
+                    <span class="badge badge-product">Expédié par Mira</span>
+                    <h3>Montre Connectée Sport Pro</h3>
+                    <div style="color: #ffa41c; margin-bottom: 5px;">★★★★★ (1,240)</div>
+                    <p class="price">199,00 €</p>
+                    <button class="btn-add" onclick="addToCart('Montre Connectée Sport Pro', 199.00)">Ajouter au panier</button>
+                </div>
+            </div>
+
+            <div class="card" data-title="casque audio sans fil">
+                <img src="https://images.unsplash.com/photo-1505740420928-5e560c06d30e?auto=format&fit=crop&w=500" alt="Audio">
+                <div class="card-content">
+                    <span class="badge badge-product">Meilleur Choix</span>
+                    <h3>Casque Audio Sans Fil Hi-Fi</h3>
+                    <div style="color: #ffa41c; margin-bottom: 5px;">★★★★☆ (850)</div>
+                    <p class="price">89,90 €</p>
+                    <button class="btn-add" onclick="addToCart('Casque Sans Fil Hi-Fi', 89.90)">Ajouter au panier</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div id="loginModal" class="modal">
+        <div class="modal-content">
+            <span class="close-btn" onclick="toggleModal('loginModal')">&times;</span>
+            <h2 style="margin-bottom: 20px;">Connexion</h2>
+            <form onsubmit="event.preventDefault(); alert('Bonjour Enzo, vous êtes connecté !'); toggleModal('loginModal')">
+                <input type="email" placeholder="Adresse e-mail ou téléphone" required>
+                <input type="password" placeholder="Mot de passe" required>
+                <button type="submit" class="btn-add">Continuer</button>
+            </form>
+            <p style="font-size: 12px; margin-top: 15px; color: #666;">En continuant, vous acceptez les conditions d'utilisation de MiraMarket.</p>
+        </div>
+    </div>
+
+    <div id="serviceModal" class="modal">
+        <div class="modal-content">
+            <span class="close-btn" onclick="toggleModal('serviceModal')">&times;</span>
+            <h2 id="serviceTitle" style="margin-bottom: 10px;">Formulaire</h2>
+            <p style="color: #666; margin-bottom: 20px;">Parlez-nous de votre projet, Enzo.</p>
+            <form onsubmit="event.preventDefault(); alert('Merci ! Votre demande a été envoyée à nos experts.'); toggleModal('serviceModal')">
+                <input type="text" placeholder="Nom de votre entreprise" required>
+                <textarea placeholder="Décrivez vos objectifs ici..." rows="4" required></textarea>
+                <button type="submit" class="btn-add btn-service" style="background: var(--fiverr-green); color: white;">Envoyer la demande</button>
+            </form>
+        </div>
+    </div>
+
+    <div id="cart-sidebar">
+        <span class="close-btn" onclick="toggleCart()">&times;</span>
+        <h2 style="margin-bottom: 30px;">Votre Panier</h2>
+        <div id="cartItems"></div>
+        <div id="cartTotal" style="font-weight: bold; font-size: 1.4rem; margin: 30px 0; border-top: 1px solid #eee; padding-top: 20px;"></div>
+        
+        <div id="paypal-button-container"></div>
+    </div>
+
+    <footer>
+        <div class="logo">Mira<span>Market</span></div>
+        <p style="margin: 15px 0; opacity: 0.7;">&copy; 2026 MiraMarket Inc. Développé pour le projet d'Enzo.</p>
+    </footer>
+
+    <script>
+        let cart = [];
+        let totalAmount = 0;
+
+        // --- GESTION DES MODALES ---
+        function toggleModal(id) {
+            const m = document.getElementById(id);
+            m.style.display = (m.style.display === 'flex') ? 'none' : 'flex';
+        }
+
+        function openService(name) {
+            document.getElementById('serviceTitle').innerText = name;
+            toggleModal('serviceModal');
+        }
+
+        // --- GESTION DU PANIER ---
+        function toggleCart() {
+            document.getElementById('cart-sidebar').classList.toggle('active');
+        }
+
+        function addToCart(name, price) {
+            cart.push({name, price});
+            updateUI();
+            if(!document.getElementById('cart-sidebar').classList.contains('active')) toggleCart();
+        }
+
+        // FONCTION AJOUTÉE : Permet de supprimer un article spécifique
+        function removeFromCart(index) {
+            cart.splice(index, 1);
+            updateUI();
+        }
+
+        // FONCTION MISE À JOUR : Affiche le bouton supprimer (&times;)
+        function updateUI() {
+            document.getElementById('cartCount').innerText = cart.length;
+            const itemsDiv = document.getElementById('cartItems');
+            const paypalDiv = document.getElementById('paypal-button-container');
+
+            if(cart.length === 0) {
+                itemsDiv.innerHTML = "<p style='color:#666;'>Votre panier est vide.</p>";
+                document.getElementById('cartTotal').innerText = "";
+                paypalDiv.style.display = 'none';
+            } else {
+                itemsDiv.innerHTML = cart.map((item, index) => `
+                    <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:15px; background:#f9f9f9; padding:10px; border-radius:8px;">
+                        <div>
+                            <div style="font-weight:bold; font-size:14px;">${item.name}</div>
+                            <div style="color:#b12704; font-size:13px;">${item.price.toFixed(2)} €</div>
+                        </div>
+                        <button onclick="removeFromCart(${index})" style="background:none; border:none; color:#cc0000; cursor:pointer; font-size:20px; font-weight:bold; padding:5px;">&times;</button>
+                    </div>
+                `).join('');
+                
+                totalAmount = cart.reduce((sum, item) => sum + item.price, 0);
+                document.getElementById('cartTotal').innerText = "Sous-total : " + totalAmount.toFixed(2) + " €";
+                paypalDiv.style.display = 'block';
+                renderPayPal();
+            }
+        }
+
+        // --- RECHERCHE FONCTIONNELLE ---
+        function handleSearch() {
+            const val = document.getElementById('mainSearch').value.toLowerCase();
+            const sugg = document.getElementById('suggestions');
+            const cards = document.querySelectorAll('.card');
+
+            if(val.length > 0) {
+                sugg.style.display = 'block';
+                let html = '';
+                cards.forEach(c => {
+                    let title = c.getAttribute('data-title');
+                    if(title.includes(val)) {
+                        html += `<div onclick="scrollToItem('${title}')">${title}</div>`;
+                    }
+                });
+                sugg.innerHTML = html || '<div>Aucun résultat trouvé</div>';
+            } else {
+                sugg.style.display = 'none';
+            }
+        }
+
+        function scrollToItem(title) {
+            const cards = document.querySelectorAll('.card');
+            cards.forEach(c => {
+                if(c.getAttribute('data-title') === title) {
+                    c.scrollIntoView({behavior: 'smooth', block: 'center'});
+                    c.style.outline = "4px solid var(--amazon-orange)";
+                    setTimeout(() => c.style.outline = "none", 2500);
+                }
+            });
+            document.getElementById('suggestions').style.display = 'none';
+        }
+
+        // --- INTÉGRATION PAYPAL ---
+        let paypalRendered = false;
+        function renderPayPal() {
+            // On réinitialise le container s'il y a déjà un bouton pour éviter les doublons
+            document.getElementById('paypal-button-container').innerHTML = '';
+            
+            paypal.Buttons({
+                style: { layout: 'vertical', color: 'gold', shape: 'pill', label: 'checkout' },
+                createOrder: function(data, actions) {
+                    return actions.order.create({
+                        purchase_units: [{ amount: { value: totalAmount.toFixed(2) } }]
+                    });
+                },
+                onApprove: function(data, actions) {
+                    return actions.order.capture().then(function(details) {
+                        alert('Succès ! Merci ' + details.payer.name.given_name + '. Votre commande MiraMarket est validée.');
+                        cart = [];
+                        updateUI();
+                        toggleCart();
+                    });
+                }
+            }).render('#paypal-button-container');
+        }
+    </script>
+</body>
+</html>
